@@ -52,9 +52,9 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // element vector and there are 10 timesteps. The number of variables is:
   //
   // 4 * 10 + 2 * 9
-  size_t n_vars = 0;
+  size_t n_vars = 4 * 10 + 2 * 9; // 58
   // TODO: Set the number of constraints
-  size_t n_constraints = 0;
+  size_t n_constraints = 6;
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
@@ -66,6 +66,29 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
   // TODO: Set lower and upper limits for variables.
+  int const per_var = 10, per_act = 9;
+  for (int i = 0; i < per_var; i++) {
+    // x
+    vars_lowerbound[i] = -100;
+    vars_upperbound[i] = 100;
+    // y
+    vars_lowerbound[1 + i] = -100;
+    vars_upperbound[1 + i] = 100;
+    // psi
+    vars_lowerbound[i] = 0;
+    vars_upperbound[i] = 360;
+    // v
+    vars_lowerbound[i] = -10;
+    vars_upperbound[i] = 100;
+  }
+  for (int i = 0; i < per_act; i++) {
+    // delta
+    vars_lowerbound[i] = -0.436332;
+    vars_upperbound[i] = 0.436332;
+    // a
+    vars_lowerbound[i] = -1;
+    vars_upperbound[i] = 1;
+  }
 
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.

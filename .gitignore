@@ -3,3 +3,6 @@ build
 tags
 .editorconfig
 .DS_Store
+.vs/
+cppad-20170616/
+Ipopt-3.12.8/
