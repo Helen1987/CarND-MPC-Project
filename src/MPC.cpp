@@ -130,51 +130,71 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
-  size_t n_vars = 4 * 10 + 2 * 9; // 58
-  size_t n_constraints = 6;
+  size_t n_vars = 6 * N + 2 * (N-1);
+  size_t n_constraints = N*6;
+
+  double x = state[0];
+  double y = state[1];
+  double psi = state[2];
+  double v = state[3];
+  double cte = state[4];
+  double epsi = state[5];
 
   // Initial value of the independent variables.
   // SHOULD BE 0 besides initial state.
   Dvector vars(n_vars);
-  for (int i = 0; i < n_vars; i++) {
+  for (int i = 0; i < n_vars; ++i) {
     vars[i] = 0;
   }
+
+  // Set the initial variable values
+  vars[x_start] = x;
+  vars[y_start] = y;
+  vars[psi_start] = psi;
+  vars[v_start] = v;
+  vars[cte_start] = cte;
+  vars[epsi_start] = epsi;
 
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
 
-  int const per_var = 10, per_act = 9;
-  for (int i = 0; i < per_var; i++) {
-    // x
-    vars_lowerbound[i] = -100;
-    vars_upperbound[i] = 100;
-    // y
-    vars_lowerbound[1 + i] = -100;
-    vars_upperbound[1 + i] = 100;
-    // psi
-    vars_lowerbound[i] = 0;
-    vars_upperbound[i] = 360;
-    // v
-    vars_lowerbound[i] = -10;
-    vars_upperbound[i] = 100;
+  int const per_act = N-1;
+  for (int i = 0; i < delta_start; ++i) {
+    vars_lowerbound[i] = -1.0e19;
+    vars_upperbound[i] = 1.0e19;
   }
-  for (int i = 0; i < per_act; i++) {
+  for (int i = 0; i < per_act; ++i) {
     // delta
-    vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    vars_lowerbound[delta_start + i] = -0.436332;
+    vars_upperbound[delta_start + i] = 0.436332;
     // a
-    vars_lowerbound[i] = -1;
-    vars_upperbound[i] = 1;
+    vars_lowerbound[a_start + i] = -1;
+    vars_upperbound[a_start + i] = 1;
   }
 
   // Lower and upper limits for the constraints
   // Should be 0 besides initial state.
   Dvector constraints_lowerbound(n_constraints);
   Dvector constraints_upperbound(n_constraints);
-  for (int i = 0; i < n_constraints; i++) {
+  for (int i = 0; i < n_constraints; ++i) {
     constraints_lowerbound[i] = 0;
     constraints_upperbound[i] = 0;
   }
+
+  constraints_lowerbound[x_start] = x;
+  constraints_lowerbound[y_start] = y;
+  constraints_lowerbound[psi_start] = psi;
+  constraints_lowerbound[v_start] = v;
+  constraints_lowerbound[cte_start] = cte;
+  constraints_lowerbound[epsi_start] = epsi;
+
+  constraints_upperbound[x_start] = x;
+  constraints_upperbound[y_start] = y;
+  constraints_upperbound[psi_start] = psi;
+  constraints_upperbound[v_start] = v;
+  constraints_upperbound[cte_start] = cte;
+  constraints_upperbound[epsi_start] = epsi;
+
 
   // object that computes objective and constraints
   FG_eval fg_eval(coeffs);
@@ -217,5 +237,5 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
-  return {};
+  return { solution.x[0], solution.x[1] };
 }
