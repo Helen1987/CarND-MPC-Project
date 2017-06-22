@@ -92,10 +92,24 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+          //Display the waypoints/reference line
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+
+          for (int i = 0; i < ptsx.size(); ++i) {
+            double next_x_translated, next_y_translated;
+
+            next_x_translated = (ptsx[i] - px) * cos(psi) + (ptsy[i] - py) * sin(psi);
+            next_y_translated = (ptsy[i] - py) * cos(psi) - (ptsx[i] - px) * sin(psi);
+
+            next_x_vals.push_back(next_x_translated);
+            next_y_vals.push_back(next_y_translated);
+          }
+
           //std::cout << "read data" << std::endl;
 
-          Eigen::Map<Eigen::VectorXd> x_values(ptsx.data(), ptsx.size());
-          Eigen::Map<Eigen::VectorXd> y_values(ptsy.data(), ptsy.size());
+          Eigen::Map<Eigen::VectorXd> x_values(next_x_vals.data(), next_x_vals.size());
+          Eigen::Map<Eigen::VectorXd> y_values(next_y_vals.data(), next_y_vals.size());
 
           //std::cout << "init x, y" << std::endl;
 
@@ -104,7 +118,9 @@ int main() {
           //std::cout << "found coeffs" << std::endl;
 
           Eigen::VectorXd state(6);
-          state << px, py, psi, v, py - ptsy[0], psi - atan(coeffs[1]);
+          state << 0, 0, 0, v, coeffs[0], -atan(coeffs[1]);
+
+          //std::cout << "state: " << state << std::endl;
 
           //std::cout << "before solve" << std::endl;
 
@@ -127,15 +143,21 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
+          int predicted_length = (actuators.size() - 2) / 2;
+          for (int i = 0; i < predicted_length; ++i) {
+            mpc_x_vals.push_back(actuators[i + 2]);
+            mpc_y_vals.push_back(actuators[i + 2 + predicted_length]);
+
+            //std::cout << "x_value: " << mpc_x_vals[i] << std::endl;
+            //std::cout << "y_value: " << mpc_y_vals[i] << std::endl;
+          }
+
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
-          //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
