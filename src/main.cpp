@@ -65,11 +65,28 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
   uWS::Hub h;
+
+  vector<double> tuning_coeff(7);
+  if (argv[1]) { // twiddle mode
+    for (int i = 0; i < tuning_coeff.size(); ++i) {
+      tuning_coeff[i] = atof(argv[i + 1]);
+    }
+  }
+  else { // tuned values
+    tuning_coeff[0] = 50.0;
+    tuning_coeff[1] = 400.0;
+    tuning_coeff[2] = 1.0;
+    tuning_coeff[3] = 1.0;
+    tuning_coeff[4] = 1.0;
+    tuning_coeff[5] = 25.0;
+    tuning_coeff[6] = 10.0;
+  }
 
   // MPC is initialized here!
   MPC mpc;
+  mpc.setParameters(tuning_coeff);
 
   h.onMessage([&mpc](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {

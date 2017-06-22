@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 8;
+size_t N = 6;
 double dt = 0.5;
 
 size_t const x_start = 0;
@@ -38,7 +38,12 @@ class FG_eval {
  public:
   // Fitted polynomial coefficients
   Eigen::VectorXd coeffs;
-  FG_eval(Eigen::VectorXd coeffs) { this->coeffs = coeffs; }
+  vector<double> tuning_coeff;
+
+  FG_eval(Eigen::VectorXd coeffs, vector<double> tuning_coeff) {
+    this->coeffs = coeffs;
+    this->tuning_coeff = tuning_coeff;
+  }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
@@ -49,27 +54,27 @@ class FG_eval {
     fg[0] = 0;
 
     // The part of the cost based on the reference state.
-    for (int t = 0; t < N; t++) {
-      fg[0] += CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+    for (size_t t = 0; t < N; t++) {
+      fg[0] += tuning_coeff[0] * CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += tuning_coeff[1] * CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += tuning_coeff[2] * CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
     std::cout << "cte: " << vars[cte_start] << std::endl;
     std::cout << "epsi: " << vars[epsi_start] << std::endl;
     std::cout << "v: " << vars[v_start] << std::endl;
 
     // Minimize the use of actuators.
-    for (int t = 0; t < N - 1; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t], 2);
+    for (size_t t = 0; t < N - 1; t++) {
+      fg[0] += tuning_coeff[3] * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += tuning_coeff[4] * CppAD::pow(vars[a_start + t], 2);
     }
     std::cout << "delta: " << vars[delta_start] << std::endl;
     std::cout << "a: " << vars[a_start] << std::endl;
 
     // Minimize the value gap between sequential actuations.
-    for (int t = 0; t < N - 2; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+    for (size_t t = 0; t < N - 2; t++) {
+      fg[0] += tuning_coeff[5] * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += tuning_coeff[6] * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
     std::cout << "d_delta: " << vars[delta_start + 1] - vars[delta_start] << std::endl;
     std::cout << "a_delta: " << vars[a_start + 1] - vars[a_start] << std::endl;
@@ -132,6 +137,10 @@ class FG_eval {
 MPC::MPC() {}
 MPC::~MPC() {}
 
+void MPC::setParameters(vector<double> parameters) {
+  tuning_coeff = parameters;
+}
+
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   bool ok = true;
   size_t i;
@@ -170,7 +179,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars_lowerbound[i] = -1.0e19;
     vars_upperbound[i] = 1.0e19;
   }
-  for (i = 0; i < per_act; ++i) {
+  for (int i = 0; i < per_act; ++i) {
     // delta
     vars_lowerbound[delta_start + i] = -0.436332;
     vars_upperbound[delta_start + i] = 0.436332;
@@ -204,7 +213,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
 
 
   // object that computes objective and constraints
-  FG_eval fg_eval(coeffs);
+  FG_eval fg_eval(coeffs, tuning_coeff);
 
   //
   // NOTE: You don't have to worry about these options
