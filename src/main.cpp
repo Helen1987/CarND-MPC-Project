@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
           //std::cout << "found coeffs" << std::endl;
 
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, coeffs[0], -atan(coeffs[1]);
+          state << 0, 0, 0, v*0.44704, coeffs[0], -atan(coeffs[1]);
 
           //std::cout << "state: " << state << std::endl;
 
