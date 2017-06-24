@@ -7,7 +7,7 @@ using CppAD::AD;
 
 // TODO: Set the timestep length and duration
 size_t N = 6;
-double dt = 0.5;
+double dt = 0.4;
 
 size_t const x_start = 0;
 size_t const y_start = x_start + N;
@@ -107,8 +107,8 @@ class FG_eval {
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * (x0 * x0);
-      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0);
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * (x0 * x0) + coeffs[3] * (x0 * x0 * x0);
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * x0 * x0);
       // x(t+1) = x(t) + v(t) * cos(psi(t)) * dt
       // y(t+1) = y(t) + v(t) * sin(psi(t)) * dt
       // psi(t+1) = psi(t) + v(t) / Lf * delta(t) * dt
