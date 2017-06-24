@@ -75,13 +75,13 @@ int main(int argc, char* argv[]) {
     }
   }
   else { // tuned values
-    tuning_coeff[0] = 50.0;
-    tuning_coeff[1] = 400.0;
+    tuning_coeff[0] = 1.0;
+    tuning_coeff[1] = 50.0;
     tuning_coeff[2] = 1.0;
     tuning_coeff[3] = 1.0;
     tuning_coeff[4] = 1.0;
-    tuning_coeff[5] = 25.0;
-    tuning_coeff[6] = 10.0;
+    tuning_coeff[5] = 1.0;
+    tuning_coeff[6] = 1.0;
   }
 
   // MPC is initialized here!
