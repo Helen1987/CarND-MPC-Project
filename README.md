@@ -3,6 +3,20 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
+## Description
+
+Every timestamp `dt` we get from simulator collections of waypoints position (`ptsx`, `ptsy`) and vehicle position (`px`, `py`), velocity (`v`), direction (`psi`), steering angle (`delta`), acceleration (`a`). To easy calculation we convert waypoints from map coordinates to [car's coordinates](/master/src/main.cpp#L118). All calculations then are done in vehicle coordinates, so in our state position and direction are zeros. Initial `cte` is just waypoints position related to car's position, and we can calculate `epsi` as `atan` of waypoints derivative.
+
+To get waypoints line, we fit it to the third order polynomial. It is good enough to describe all major roads. Speed was converted from mph to mps since all calculations are done with meters. To deal with 100 milliseconds latency initial state was slightly changed. Instead of sending car's state at time frame 0.0 we predict vehicle state in 100 milliseconds according to [kinematic equations](/master/src/main.cpp#L139) and send it as car's current state.
+
+Car's speed is not high, so `dt=0.4` is good to handle changing situation. There is no reason to predict car's position in more than 2 sec, so `N=6`. Cost function [was chosen](/master/src/MPC.cpp#L54) to minimize cte and epsi. To avoid car's stop reference speed has been selected as 25 mps and included in the cost function. We do not want to have high values for steering angle and acceleration, so they are added to the cost function as well. And lastly, to have smooth behavior car should not change steering angle and acceleration drastically, so we added change minimization in the cost function.
+
+Code was modified to tune parameters [without compilation](/master/src/main.cpp#L72). I noticed that `epsi` is the most important parameter to control car's behavior. Eventually, it is the only parameter which was tuned.
+
+## Result
+
+[Video](https://youtu.be/vyoi-Ck825E) of car with referral speed 25mps.
+
 ## Dependencies
 
 * cmake >= 3.5
@@ -57,59 +71,3 @@ is the vehicle starting offset of a straight line (reference). If the MPC implem
 (not too many) it should find and track the reference line.
 2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
 3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./

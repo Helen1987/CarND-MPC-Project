@@ -111,7 +111,7 @@ class FG_eval {
       AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * x0 * x0);
       // x(t+1) = x(t) + v(t) * cos(psi(t)) * dt
       // y(t+1) = y(t) + v(t) * sin(psi(t)) * dt
-      // psi(t+1) = psi(t) + v(t) / Lf * delta(t) * dt
+      // psi(t+1) = psi(t) - v(t) / Lf * delta(t) * dt
       // v(t+1) = v(t) + a(t) * dt
       // cte(​t + 1)​ = f(x(​t)​​)−y(​t)​​ + (v(​t)*sin(eψ(​t)​​)*dt)
       // eψ(​t + 1) = ψ(​t)−ψdes(​t) + (​v(​t)*delta(t)*dt/Lf)
