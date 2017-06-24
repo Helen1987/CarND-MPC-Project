@@ -59,25 +59,25 @@ class FG_eval {
       fg[0] += tuning_coeff[1] * CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += tuning_coeff[2] * CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
-    std::cout << "cte: " << vars[cte_start] << std::endl;
-    std::cout << "epsi: " << vars[epsi_start] << std::endl;
-    std::cout << "v: " << vars[v_start] << std::endl;
+    //std::cout << "cte: " << vars[cte_start] << std::endl;
+    //std::cout << "epsi: " << vars[epsi_start] << std::endl;
+    //std::cout << "v: " << vars[v_start] << std::endl;
 
     // Minimize the use of actuators.
     for (size_t t = 0; t < N - 1; t++) {
       fg[0] += tuning_coeff[3] * CppAD::pow(vars[delta_start + t], 2);
       fg[0] += tuning_coeff[4] * CppAD::pow(vars[a_start + t], 2);
     }
-    std::cout << "delta: " << vars[delta_start] << std::endl;
-    std::cout << "a: " << vars[a_start] << std::endl;
+    //std::cout << "delta: " << vars[delta_start] << std::endl;
+    //std::cout << "a: " << vars[a_start] << std::endl;
 
     // Minimize the value gap between sequential actuations.
     for (size_t t = 0; t < N - 2; t++) {
       fg[0] += tuning_coeff[5] * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += tuning_coeff[6] * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
-    std::cout << "d_delta: " << vars[delta_start + 1] - vars[delta_start] << std::endl;
-    std::cout << "a_delta: " << vars[a_start + 1] - vars[a_start] << std::endl;
+    //std::cout << "d_delta: " << vars[delta_start + 1] - vars[delta_start] << std::endl;
+    //std::cout << "a_delta: " << vars[a_start + 1] - vars[a_start] << std::endl;
 
     fg[1 + x_start] = vars[x_start];
     fg[1 + y_start] = vars[y_start];

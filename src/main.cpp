@@ -108,6 +108,8 @@ int main(int argc, char* argv[]) {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
 
           //Display the waypoints/reference line
           vector<double> next_x_vals;
@@ -134,8 +136,14 @@ int main(int argc, char* argv[]) {
 
           //std::cout << "found coeffs" << std::endl;
 
+          double latency = 0.1;
+          double expected_x = v*cos(psi)*latency;
+          psi = -v*delta*latency / 2.67;
+          v = v + a*latency;
+
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v*0.44704, coeffs[0], -atan(coeffs[1]);
+          // convert spped from mph to mps since calculations are in meters
+          state << 0, 0, 0, v*0.44704, polyeval(coeffs, expected_x), -atan(coeffs[1] + 2 * coeffs[2] * expected_x + 3 * coeffs[3] * (expected_x*expected_x));
 
           //std::cout << "state: " << state << std::endl;
 
