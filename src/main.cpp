@@ -134,8 +134,8 @@ int main(int argc, char* argv[]) {
 
           Eigen::VectorXd coeffs = polyfit(x_values, y_values, 3);
 
-          //std::cout << "found coeffs" << std::endl;
-
+          // deal with latency
+          // predict car's position in 0.1 milliseconds
           double latency = 0.1;
           double expected_x = v*cos(psi)*latency;
           psi = -v*delta*latency / 2.67;
