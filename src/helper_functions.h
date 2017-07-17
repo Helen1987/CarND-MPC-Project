@@ -2,6 +2,8 @@
 #define SRC_HELPER_FUNCTIONS_H_
 
 #include <math.h>
+#include <vector>
+#include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 
 const size_t N = 6;
@@ -75,6 +77,20 @@ T d_polyeval(Eigen::VectorXd coeffs, T x) {
     power *= x;
   }
   return result;
+}
+
+inline void global2car(double px, double py, double psi, std::vector<double> global_x, std::vector<double> global_y,
+  std::vector<double> &cars_x, std::vector<double> &cars_y){
+
+  for (std::size_t i = 0; i < global_x.size(); ++i) {
+    double next_x_translated, next_y_translated;
+
+    next_x_translated = (global_x[i] - px) * cos(psi) + (global_y[i] - py) * sin(psi);
+    next_y_translated = (global_y[i] - py) * cos(psi) - (global_x[i] - px) * sin(psi);
+
+    cars_x.push_back(next_x_translated);
+    cars_y.push_back(next_y_translated);
+  }
 }
 
 #endif  // SRC_HELPER_FUNCTIONS_H_

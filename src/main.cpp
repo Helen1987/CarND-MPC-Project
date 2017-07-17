@@ -3,7 +3,6 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
-#include <vector>
 #include "Eigen-3.3/Eigen/Core"
 #include "helper_functions.h"
 #include "MPC.h"
@@ -32,7 +31,7 @@ int main(int argc, char* argv[]) {
 
   vector<double> tuning_coeff(7);
   if (argv[1]) { // twiddle mode
-    for (int i = 0; i < tuning_coeff.size(); ++i) {
+    for (size_t i = 0; i < tuning_coeff.size(); ++i) {
       tuning_coeff[i] = atof(argv[i + 1]);
     }
   }
@@ -77,15 +76,7 @@ int main(int argc, char* argv[]) {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          for (int i = 0; i < ptsx.size(); ++i) {
-            double next_x_translated, next_y_translated;
-
-            next_x_translated = (ptsx[i] - px) * cos(psi) + (ptsy[i] - py) * sin(psi);
-            next_y_translated = (ptsy[i] - py) * cos(psi) - (ptsx[i] - px) * sin(psi);
-
-            next_x_vals.push_back(next_x_translated);
-            next_y_vals.push_back(next_y_translated);
-          }
+          global2car(px, py, psi, ptsx, ptsy, next_x_vals, next_y_vals);
 
           Eigen::Map<Eigen::VectorXd> x_values(next_x_vals.data(), next_x_vals.size());
           Eigen::Map<Eigen::VectorXd> y_values(next_y_vals.data(), next_y_vals.size());
