@@ -2,12 +2,9 @@
 #include <cppad/cppad.hpp>
 #include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
+#include "helper_functions.h"
 
 using CppAD::AD;
-
-// TODO: Set the timestep length and duration
-size_t N = 6;
-double dt = 0.4;
 
 size_t const x_start = 0;
 size_t const y_start = x_start + N;
@@ -17,22 +14,6 @@ size_t const cte_start = v_start + N;
 size_t const epsi_start = cte_start + N;
 size_t const delta_start = epsi_start + N;
 size_t const a_start = delta_start + N - 1;
-
-// This value assumes the model presented in the classroom is used.
-//
-// It was obtained by measuring the radius formed by running the vehicle in the
-// simulator around in a circle with a constant steering angle and velocity on a
-// flat terrain.
-//
-// Lf was tuned until the the radius formed by the simulating the model
-// presented in the classroom matched the previous radius.
-//
-// This is the length from front to CoG that has a similar radius.
-const double Lf = 2.67;
-
-// Both the reference cross track and orientation errors are 0.
-// The reference velocity is set to 40 mph.
-double ref_v = 25;
 
 class FG_eval {
  public:
@@ -59,25 +40,18 @@ class FG_eval {
       fg[0] += tuning_coeff[1] * CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += tuning_coeff[2] * CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
-    //std::cout << "cte: " << vars[cte_start] << std::endl;
-    //std::cout << "epsi: " << vars[epsi_start] << std::endl;
-    //std::cout << "v: " << vars[v_start] << std::endl;
 
     // Minimize the use of actuators.
     for (size_t t = 0; t < N - 1; t++) {
       fg[0] += tuning_coeff[3] * CppAD::pow(vars[delta_start + t], 2);
       fg[0] += tuning_coeff[4] * CppAD::pow(vars[a_start + t], 2);
     }
-    //std::cout << "delta: " << vars[delta_start] << std::endl;
-    //std::cout << "a: " << vars[a_start] << std::endl;
 
     // Minimize the value gap between sequential actuations.
     for (size_t t = 0; t < N - 2; t++) {
       fg[0] += tuning_coeff[5] * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += tuning_coeff[6] * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
-    //std::cout << "d_delta: " << vars[delta_start + 1] - vars[delta_start] << std::endl;
-    //std::cout << "a_delta: " << vars[a_start + 1] - vars[a_start] << std::endl;
 
     fg[1 + x_start] = vars[x_start];
     fg[1 + y_start] = vars[y_start];
@@ -107,8 +81,8 @@ class FG_eval {
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * (x0 * x0) + coeffs[3] * (x0 * x0 * x0);
-      AD<double> psides0 = CppAD::atan(coeffs[1] + 2 * coeffs[2] * x0 + 3 * coeffs[3] * x0 * x0);
+      AD<double> f0 = polyeval<AD<double>>(coeffs, x0);
+      AD<double> psides0 = CppAD::atan(d_polyeval<AD<double>>(coeffs, x0));
       // x(t+1) = x(t) + v(t) * cos(psi(t)) * dt
       // y(t+1) = y(t) + v(t) * sin(psi(t)) * dt
       // psi(t+1) = psi(t) - v(t) / Lf * delta(t) * dt
@@ -132,7 +106,7 @@ class FG_eval {
 };
 
 //
-// MPC class definition implementation.
+// MPC class definition implementation
 //
 MPC::MPC() {}
 MPC::~MPC() {}
@@ -174,12 +148,12 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
 
-  int const per_act = N-1;
+  size_t const per_act = N-1;
   for (i = 0; i < delta_start; ++i) {
     vars_lowerbound[i] = -1.0e19;
     vars_upperbound[i] = 1.0e19;
   }
-  for (int i = 0; i < per_act; ++i) {
+  for (i = 0; i < per_act; ++i) {
     // delta
     vars_lowerbound[delta_start + i] = -0.436332;
     vars_upperbound[delta_start + i] = 0.436332;

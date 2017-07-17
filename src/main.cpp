@@ -5,17 +5,12 @@
 #include <thread>
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
-#include "Eigen-3.3/Eigen/QR"
+#include "helper_functions.h"
 #include "MPC.h"
 #include "json.hpp"
 
 // for convenience
 using json = nlohmann::json;
-
-// For converting back and forth between radians and degrees.
-constexpr double pi() { return M_PI; }
-double deg2rad(double x) { return x * pi() / 180; }
-double rad2deg(double x) { return x * 180 / pi(); }
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -30,39 +25,6 @@ string hasData(string s) {
     return s.substr(b1, b2 - b1 + 2);
   }
   return "";
-}
-
-// Evaluate a polynomial.
-double polyeval(Eigen::VectorXd coeffs, double x) {
-  double result = 0.0;
-  for (int i = 0; i < coeffs.size(); i++) {
-    result += coeffs[i] * pow(x, i);
-  }
-  return result;
-}
-
-// Fit a polynomial.
-// Adapted from
-// https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
-Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
-                        int order) {
-  assert(xvals.size() == yvals.size());
-  assert(order >= 1 && order <= xvals.size() - 1);
-  Eigen::MatrixXd A(xvals.size(), order + 1);
-
-  for (int i = 0; i < xvals.size(); i++) {
-    A(i, 0) = 1.0;
-  }
-
-  for (int j = 0; j < xvals.size(); j++) {
-    for (int i = 0; i < order; i++) {
-      A(j, i + 1) = A(j, i) * xvals(j);
-    }
-  }
-
-  auto Q = A.householderQr();
-  auto result = Q.solve(yvals);
-  return result;
 }
 
 int main(int argc, char* argv[]) {
@@ -125,12 +87,8 @@ int main(int argc, char* argv[]) {
             next_y_vals.push_back(next_y_translated);
           }
 
-          //std::cout << "read data" << std::endl;
-
           Eigen::Map<Eigen::VectorXd> x_values(next_x_vals.data(), next_x_vals.size());
           Eigen::Map<Eigen::VectorXd> y_values(next_y_vals.data(), next_y_vals.size());
-
-          //std::cout << "init x, y" << std::endl;
 
           Eigen::VectorXd coeffs = polyfit(x_values, y_values, 3);
 
@@ -138,20 +96,14 @@ int main(int argc, char* argv[]) {
           // predict car's position in 0.1 milliseconds
           double latency = 0.1;
           double expected_x = v*cos(psi)*latency;
-          psi = -v*delta*latency / 2.67;
+          psi = -v*delta*latency / Lf;
           v = v + a*latency;
 
           Eigen::VectorXd state(6);
           // convert spped from mph to mps since calculations are in meters
-          state << 0, 0, 0, v*0.44704, polyeval(coeffs, expected_x), -atan(coeffs[1] + 2 * coeffs[2] * expected_x + 3 * coeffs[3] * (expected_x*expected_x));
-
-          //std::cout << "state: " << state << std::endl;
-
-          //std::cout << "before solve" << std::endl;
+          state << 0, 0, 0, v*MPH_to_MPS, polyeval<double>(coeffs, expected_x), -atan(d_polyeval<double>(coeffs, expected_x));
 
           vector<double> actuators = mpc.Solve(state, coeffs);
-
-          //std::cout << "after solve" << std::endl;
 
           double steer_value = actuators[0];
           double throttle_value = actuators[1];
@@ -162,8 +114,6 @@ int main(int argc, char* argv[]) {
           msgJson["steering_angle"] = steer_value / deg2rad(25);
           msgJson["throttle"] = throttle_value;
 
-          //std::cout << "set data" << std::endl;
-
           //Display the MPC predicted trajectory 
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
@@ -172,9 +122,6 @@ int main(int argc, char* argv[]) {
           for (int i = 0; i < predicted_length; ++i) {
             mpc_x_vals.push_back(actuators[i + 2]);
             mpc_y_vals.push_back(actuators[i + 2 + predicted_length]);
-
-            //std::cout << "x_value: " << mpc_x_vals[i] << std::endl;
-            //std::cout << "y_value: " << mpc_y_vals[i] << std::endl;
           }
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
