@@ -148,12 +148,12 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
 
-  int const per_act = N-1;
+  size_t const per_act = N-1;
   for (i = 0; i < delta_start; ++i) {
     vars_lowerbound[i] = -1.0e19;
     vars_upperbound[i] = 1.0e19;
   }
-  for (int i = 0; i < per_act; ++i) {
+  for (i = 0; i < per_act; ++i) {
     // delta
     vars_lowerbound[delta_start + i] = -0.436332;
     vars_upperbound[delta_start + i] = 0.436332;
